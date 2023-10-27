@@ -154,6 +154,10 @@ svg {
   overflow: auto;    
 }
 
+.bar rect {
+  shape-rendering: crispEdges;
+}
+
 .zoom-button {
   position: absolute;
   bottom: 10px;

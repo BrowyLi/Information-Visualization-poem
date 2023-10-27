@@ -77,10 +77,11 @@ let chartHeight;
 let xScale;
 let yScale;
 let textData = [
-    "This is the first block of text.",
+    "This is the interactive section of the blocks, will be developed in M5.",
     "Here's the second block of text with more information.",
     "Finally, this is the third block of text."
   ];
+
 let isPie = false;
 
 document.getElementById("forward-button").addEventListener("click", forwardClicked);
@@ -105,37 +106,35 @@ function updateBarChart(data, title = "") {
     console.log("xScale:", xScale);
     console.log("yScale:", yScale);
 
+    const blocks = ['Block1', 'Block2', 'Block3', 'Block4', 'Block5'];
+    const colorScale = d3.scaleOrdinal()
+    .domain(['Block1', 'Block2', 'Block3', 'Block4', 'Block5'])
+    .range(['#0D3B66', '#14466A', '#1E6F72', '#3C8DAD', '#28AFB0']);
+
+    const series = d3.stack().keys(blocks)(data);
+    console.log("Stacked data", series);
+
     xScale.domain(data.map(d => d.Wealth));
-    yScale.domain([0, d3.max(data, d => d.comp_prim_v2_m)]).nice();
-    
-    const bars = chart.selectAll(".bar").data(data);
 
-    bars.exit()
-        .transition()
-        .duration(500)
-        .attr("y", chartHeight)
-        .attr("height", 0)
-        .remove();
+    const maxVal = d3.max(series, d => d3.max(d, d => d[1]));
+    yScale.domain([0, maxVal]).nice();
 
-    bars.transition()
-        .duration(500)
-        .attr("x", d => xScale(d.Wealth))
-        .attr("y", d => yScale(d.comp_prim_v2_m))
-        .attr("height", d => chartHeight - yScale(d.comp_prim_v2_m))
-        .attr("width", xScale.bandwidth());
+    const barGroups = chart.selectAll(".bar-group")
+        .data(series, d => d.key);
 
-    bars.enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", d => xScale(d.Wealth))
-        .attr("y", chartHeight)
+    barGroups.enter().append("g")
+        .attr("class", "bar-group")
+        .attr("fill", (d, i) => colorScale(i));
+
+    chart.selectAll(".bar-group")
+        .selectAll("rect")
+        .data(d => d)
+        .join("rect")
+        .attr("x", d => xScale(d.data.Wealth))
         .attr("width", xScale.bandwidth())
-        .attr("height", 0) 
-        .attr("fill", "white")
-        .transition() 
-        .duration(1000) 
-        .attr("y", d => yScale(d.comp_prim_v2_m))
-        .attr("height", d => chartHeight - yScale(d.comp_prim_v2_m));
-        
+        .attr("y", d => yScale(d[1]))
+        .attr("height", d => yScale(d[0]) - yScale(d[1]));
+
     chart.select(".x-axis")
         .transition()
         .duration(500)
@@ -160,6 +159,7 @@ function updateBarChart(data, title = "") {
             });
     }
 }
+
 
 function forwardClicked() {
     if (keyframeIndex < keyframes.length - 1) {
